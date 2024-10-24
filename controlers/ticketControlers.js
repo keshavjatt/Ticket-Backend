@@ -29,7 +29,12 @@ const createTicket = asyncHandler(async (req, res) => {
 //@methoad: get
 //@url: tickets/view-tickets
 const viewTickets = asyncHandler(async (req, res) => {
-  const tickets = await Ticket.find({ user: req.user.id });
+  let tickets;
+  if (req.user.isAdmin) {
+    tickets = await Ticket.find();
+  } else {
+    tickets = await Ticket.find({ user: req.user.id });
+  }
   res.status(201).json(tickets);
 });
 
@@ -42,12 +47,13 @@ const viewTicket = asyncHandler(async (req, res) => {
     res.status(401);
     throw new Error("No Ticket found");
   }
-  if (ticket.user.toString() != req.user.id) {
+  if (!req.user.isAdmin && ticket.user.toString() !== req.user.id) {
     res.status(400);
     throw new Error("Not Authorized");
   }
   res.status(201).json(ticket);
 });
+
 //@des: Update ticket
 //@methoad: PUT
 //@url: tickets/view-ticket/:id
@@ -57,20 +63,17 @@ const updateTicket = asyncHandler(async (req, res) => {
     res.status(401);
     throw new Error("No Ticket found");
   }
-  if (ticket.user.toString() != req.user.id) {
+  if (!req.user.isAdmin && ticket.user.toString() !== req.user.id) {
     res.status(400);
     throw new Error("Not Authorized");
   }
   const { product, description } = req.body;
 
-  const upadatedTicket = await Ticket.findByIdAndUpdate(
-    req.params.id,
-    req.body,
-    {
-      new: true,
-    }
-  );
-  res.status(201).json(upadatedTicket);
+  const updatedTicket = await Ticket.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+  });
+
+  res.status(201).json(updatedTicket);
 });
 
 //@des: Delete ticket
@@ -82,13 +85,14 @@ const deleteTicket = asyncHandler(async (req, res) => {
     res.status(401);
     throw new Error("No Ticket found");
   }
-  if (ticket.user.toString() != req.user.id) {
+  if (!req.user.isAdmin && ticket.user.toString() !== req.user.id) {
     res.status(400);
     throw new Error("Not Authorized");
   }
   await ticket.remove();
   res.status(201).json({ message: "Ticket has been removed" });
 });
+
 module.exports = {
   createTicket,
   viewTickets,
